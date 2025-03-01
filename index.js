@@ -7,7 +7,7 @@ export const currencies = async (fromCurrency, toCurrency, unite) => {
         base_currency: fromCurrency,
         currencies: toCurrency
     })
-    return res?.data[toCurrency] * unite;
+    return res?.data[toCurrency] * unite * unite;
 }
 
 
