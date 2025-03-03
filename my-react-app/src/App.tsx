@@ -7,7 +7,8 @@ function App() {
 
 
   const dataSource = [
-    { id: 1, name: "John", email: "john@example.com", passWord: "ssdf,msbfmjhvfhjasvfhjgasdvfhasgvfhajsgdabc123", time: "10:30 AM", country: "USA", city: "New York", phone: "9876543210", status: "active", role: "admin", age: "34", gender: "male", zipCode: "10001", address: "123 Main St", company: "TechCorp", department: "IT", salary: "80000", experience: "10 years", language: "English", skills: "React, Node.js", education: "Bachelor's Degree", hobby: "Gaming", favoriteColor: "Blue", food: "Pizza" },
+    { id: 1, name: "John", email: "john@example.com", passWord: "ssdf,msbfmjhvfhjasvfhjgasdvfhasgvfhajsgdabc123", time: "10:30 AM", country: "USA", city: "New York", phone: "9876543210", status: "active", role: "admin", age: "34", gender: "male", zipCode: "10001", address: "123 Main St", company: "TechCorp", department: "IT", salary: "80000", experience: "10 years", language: "English", skills: "React, Node.js", education: "Bachelor's Degree", hobby: "Gaming", favoriteColor: "Blue", food: "Pizza" , diamondList : [{ id: 1, name: "John", email: "john@example.com", passWord: "ssdf,msbfmjhvfhjasvfhjgasdvfhasgvfhajsgdabc123", time: "10:30 AM", country: "USA", city: "New York", phone: "9876543210", status: "active", role: "admin", age: "34", gender: "male", zipCode: "10001", address: "123 Main St", company: "TechCorp", department: "IT", salary: "80000", experience: "10 years", language: "English", skills: "React, Node.js", education: "Bachelor's Degree", hobby: "Gaming", favoriteColor: "Blue", food: "Pizza" , description: "idkasjn" },
+      { id: 2, name: "Alice", email: "alice@mail.com", passWord: "ssdf,msbfmjhvfhjasvfhjgasdvfhasgvfhajsgdxyz789", time: "3:45 PM", country: "Canada", city: "Toronto", phone: "9123456789", status: "inactive", role: "user", age: "28", gender: "female", zipCode: "M4B 1B3", address: "45 Queen St", company: "BizGroup", department: "HR", salary: "60000", experience: "5 years", language: "French", skills: "Python, Django", education: "Master's Degree", hobby: "Reading", favoriteColor: "Green", food: "Sushi" },] },
     { id: 2, name: "Alice", email: "alice@mail.com", passWord: "ssdf,msbfmjhvfhjasvfhjgasdvfhasgvfhajsgdxyz789", time: "3:45 PM", country: "Canada", city: "Toronto", phone: "9123456789", status: "inactive", role: "user", age: "28", gender: "female", zipCode: "M4B 1B3", address: "45 Queen St", company: "BizGroup", department: "HR", salary: "60000", experience: "5 years", language: "French", skills: "Python, Django", education: "Master's Degree", hobby: "Reading", favoriteColor: "Green", food: "Sushi" },
     { id: 3, name: "Mike", email: "mike@work.com", passWord: "ssdf,msbfmjhvfhjasvfhjgasdvfhasgvfhajsgdqwerty", time: "9:00 AM", country: "UK", city: "London", phone: "8112233445", status: "active", role: "manager", age: "40", gender: "male", zipCode: "E1 6AN", address: "789 Oxford St", company: "Finance Inc.", department: "Finance", salary: "95000", experience: "15 years", language: "English", skills: "Excel, SQL", education: "PhD", hobby: "Traveling", favoriteColor: "Red", food: "Pasta" },
     { id: 4, name: "Sophia", email: "sophia@xyz.com", passWord: "ssdf,msbfmjhvfhjasvfhjgasdvfhasgvfhajsgdmypwd", time: "1:15 PM", country: "Germany", city: "Berlin", phone: "7788996655", status: "active", role: "admin", age: "29", gender: "female", zipCode: "10115", address: "88 Berlin St", company: "SoftTech", department: "Development", salary: "75000", experience: "7 years", language: "German", skills: "Java, Spring Boot", education: "Bachelor's Degree", hobby: "Cooking", favoriteColor: "Purple", food: "Tacos" },
@@ -72,7 +73,13 @@ function App() {
         rowKey="id"
         expandedRowKeys={expandedKeys}
         onExpand={handleExpand}
-        expandedRowRender={(record) => <p>{record.description}</p>}
+        expandedRowRender={(record) => 
+          <CustomGrid
+          data={record?.diamondList}
+          columns={columns}
+          rowKey="id"
+        />  
+        }
       />
     </div>
   );

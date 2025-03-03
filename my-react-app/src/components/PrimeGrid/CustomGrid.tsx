@@ -25,7 +25,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
   onExpand,
   expandedRowRender,
 }) => {
-  const handleRowClick = (record: any) => {
+  const handleExpandClick = (record: any) => {
     const isExpanded = expandedRowKeys.includes(record[rowKey]);
     onExpand?.(!isExpanded, record);
   };
@@ -50,24 +50,27 @@ const CustomGrid: React.FC<CustomGridProps> = ({
         {/* Table Head */}
         <thead style={{ position: "sticky", top: 0, background: "white", zIndex: 2 }}>
           <tr>
-            <th
+            {expandedRowRender && (
+              <th
               style={{
+                position: "sticky",
+                left: 0,
+                zIndex: 3,
                 width: "40px",
                 minWidth: "40px",
                 maxWidth: "40px",
                 border: "1px solid #ddd",
-                padding: "8px",
+                // padding: "8px",
                 background: "white",
               }}
-            >
-              {/* Expand/Collapse Header */}
-            </th>
+              />
+            )}
             {columns.map((col) => (
               <th
                 key={col.key || col.dataIndex}
                 style={{
                   border: "1px solid #ddd",
-                  padding: "8px",
+                  // padding: "8px",
                   width: col.width ? `${col.width}px` : "100px",
                   minWidth: col.width ? `${col.width}px` : "100px",
                   maxWidth: col.width ? `${col.width}px` : "100px",
@@ -87,17 +90,23 @@ const CustomGrid: React.FC<CustomGridProps> = ({
         <tbody>
           {data.map((row, rowIndex) => (
             <React.Fragment key={row[rowKey]}>
-              <tr onClick={() => handleRowClick(row)} style={{ cursor: "pointer" }}>
-                <td
-                  style={{
-                    textAlign: "center",
-                    border: "1px solid #ddd",
-                    padding: "8px",
-                    background: "white",
-                  }}
-                >
-                  {expandedRowKeys.includes(row[rowKey]) ? "▼" : "▶"}
-                </td>
+              <tr>
+                {expandedRowRender && (
+                  <td
+                    onClick={() => handleExpandClick(row)}
+                    style={{
+                      position: "sticky",
+                      left: 0,
+                      zIndex: 2,
+                      textAlign: "center",
+                      border: "1px solid #ddd",
+                      // padding: "8px",
+                      background: "white",
+                    }}
+                  >
+                    {expandedRowKeys.includes(row[rowKey]) ? "▼" : "▶"}
+                  </td>
+                )}
                 {columns.map((col) => (
                   <td
                     key={col.key || col.dataIndex}
@@ -119,7 +128,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
               </tr>
               {expandedRowRender && expandedRowKeys.includes(row[rowKey]) && (
                 <tr>
-                  <td colSpan={columns.length + 1} style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  <td colSpan={columns.length + 1} style={{ border: "1px solid #ddd" }}>
                     {expandedRowRender(row)}
                   </td>
                 </tr>
