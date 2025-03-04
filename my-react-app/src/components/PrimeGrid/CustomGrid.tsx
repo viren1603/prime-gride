@@ -59,7 +59,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                 width: "40px",
                 minWidth: "40px",
                 maxWidth: "40px",
-                border: "1px solid #ddd",
+                boxShadow: "inset 0 0 0 0.5px #ddd",
                 // padding: "8px",
                 background: "white",
               }}
@@ -70,7 +70,6 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                 key={col.key || col.dataIndex}
                 style={{
                   border: "1px solid #ddd",
-                  // padding: "8px",
                   width: col.width ? `${col.width}px` : "100px",
                   minWidth: col.width ? `${col.width}px` : "100px",
                   maxWidth: col.width ? `${col.width}px` : "100px",
@@ -99,8 +98,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                       left: 0,
                       zIndex: 2,
                       textAlign: "center",
-                      border: "1px solid #ddd",
-                      // padding: "8px",
+                      boxShadow: "inset 0 0 0 0.5px #ddd",
                       background: "white",
                     }}
                   >
