@@ -45,9 +45,9 @@ const CustomGrid: React.FC<CustomGridProps> = ({
 
   const expandColumnStyle: React.CSSProperties = {
     position: "sticky",
-    left: 0, // Sticky horizontally
-    top: 0,  // Sticky vertically
-    zIndex: 3, // Ensure it stays above other elements
+    left: 0,
+    top: 0,
+    zIndex: 3,
     width: "40px",
     minWidth: "40px",
     maxWidth: "40px",
@@ -76,11 +76,16 @@ const CustomGrid: React.FC<CustomGridProps> = ({
           }}
         >
           {/* Table Head */}
-          <thead style={{ position: "sticky", top: 0, background: "white", zIndex: 2 }}>
+          <thead>
             <tr>
-              {expandedRowRender && <th style={expandColumnStyle} />}
+              {expandedRowRender && (
+                <th style={{ ...expandColumnStyle, position: "sticky", top: 0, zIndex: 3 }} />
+              )}
               {columns.map((col) => (
-                <th key={col.key || col.dataIndex} style={columnStyle(col)}>
+                <th
+                  key={col.key || col.dataIndex}
+                  style={{ ...columnStyle(col), position: "sticky", top: 0, zIndex: 2 }}
+                >
                   {col.title}
                 </th>
               ))}
