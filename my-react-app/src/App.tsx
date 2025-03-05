@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import CustomGrid from "./components/PrimeGrid/CustomGrid";
-import ExtraSummaryBox from "./components/common/ExtraSummaryBox";
+// import ExtraSummaryBox from "./components/common/ExtraSummaryBox";
 import { dataSource } from "./components/data/ExportDatas";
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
     },
     { title: "ID", dataIndex: "id", key: "id", width: 80, fixed: "left" },
     { title: "Email", dataIndex: "email", key: "email", width: 200 },
-    { title: "Password", dataIndex: "passWord", key: "passWord", width: 200 },
+    { title: "Password", dataIndex: "passWord", key: "passWord", width: 400 },
     { title: "Time", dataIndex: "time", key: "time", width: 120 },
     { title: "Country", dataIndex: "country", key: "country", width: 150 },
     { title: "City", dataIndex: "city", key: "city", width: 150 },
@@ -82,7 +82,7 @@ function App() {
         onExpand={handleExpand}
         summary={() => {
           const summaryIndex: Record<number, string | number> = {
-            3: "labData.length",
+            1: "labData.length",
             2: "viren",
           };
           return (
