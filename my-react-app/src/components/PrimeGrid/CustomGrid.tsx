@@ -16,25 +16,36 @@ interface CustomGridProps {
   onExpand?: (expanded: boolean, record: any) => void;
   expandedRowRender?: (record: any) => React.ReactNode;
   summary?: () => React.ReactNode;
+  isResizable?: boolean;
+  isDraggable?: boolean;
 }
 
 const CustomGrid: React.FC<CustomGridProps> = ({
   data = [],
-  columns = [],
+  columns: initialColumns = [],
   rowKey,
   expandedRowKeys = [],
   onExpand,
   expandedRowRender,
   summary,
+  isResizable = false,
+  isDraggable = false,
 }) => {
   const [selectedRange, setSelectedRange] = useState<{ start: any; end: any }>({
     start: null,
     end: null,
   });
   const [isDragging, setIsDragging] = useState(false);
-  const [isCopied, setIsCopied] = useState(false); // State to track copy action
+  const [isCopied, setIsCopied] = useState(false);
+  const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeColumnIndex, setResizeColumnIndex] = useState<number | null>(null);
+  const [resizeStartX, setResizeStartX] = useState<number | null>(null);
+  const [resizeStartWidth, setResizeStartWidth] = useState<number | null>(null);
+  const [columns, setColumns] = useState<ColumnType[]>(initialColumns); // State for column order
+  const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null); // Track dragged column
+  const [dropColumnIndex, setDropColumnIndex] = useState<number | null>(null); // Track drop target
 
-  // Ref for the table container
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const handleExpandClick = (record: any) => {
@@ -42,16 +53,18 @@ const CustomGrid: React.FC<CustomGridProps> = ({
     onExpand?.(!isExpanded, record);
   };
 
-  const columnStyle = (col: ColumnType) => ({
+  const columnStyle = (col: ColumnType, isHeader: boolean = false) => ({
     boxShadow: "inset 0 0 0 0.5px #ddd",
-    width: col.width ? `${col.width}px` : "100px",
-    minWidth: col.width ? `${col.width}px` : "100px",
-    maxWidth: col.width ? `${col.width}px` : "100px",
+    width: columnWidths[col.dataIndex] ? `${columnWidths[col.dataIndex]}px` : col.width ? `${col.width}px` : "100px",
+    minWidth: columnWidths[col.dataIndex] ? `${columnWidths[col.dataIndex]}px` : col.width ? `${col.width}px` : "100px",
+    maxWidth: columnWidths[col.dataIndex] ? `${columnWidths[col.dataIndex]}px` : col.width ? `${col.width}px` : "100px",
     background: "white",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-    padding:"5px"
+    padding: "5px",
+    position: "relative",
+    cursor: isHeader ? "grab" : "default", // Apply grab cursor only to header
   });
 
   const expandColumnStyle: React.CSSProperties = {
@@ -63,7 +76,6 @@ const CustomGrid: React.FC<CustomGridProps> = ({
     maxWidth: "40px",
     boxShadow: "inset 0 0 0 0.5px #ddd",
     background: "white",
-
   };
 
   const expandCellStyle: React.CSSProperties = {
@@ -109,16 +121,19 @@ const CustomGrid: React.FC<CustomGridProps> = ({
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+    setIsResizing(false);
+    setResizeColumnIndex(null);
+    setResizeStartX(null);
+    setResizeStartWidth(null);
   }, []);
 
-  // Deselect cells when clicking outside the table
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         tableContainerRef.current &&
         !tableContainerRef.current.contains(event.target as Node)
       ) {
-        setSelectedRange({ start: null, end: null }); // Deselect cells
+        setSelectedRange({ start: null, end: null });
       }
     };
 
@@ -134,10 +149,9 @@ const CustomGrid: React.FC<CustomGridProps> = ({
   const getCellStyle = useCallback(
     (rowIndex: number, colIndex: number) => {
       const style: React.CSSProperties = {
-        transition: "background-color 0.1s ease-in-out", // Smooth transition effect
+        transition: "background-color 0.1s ease-in-out",
       };
 
-      // Selection style
       if (selectedRange.start && selectedRange.end) {
         const { start, end } = selectedRange;
         const startRow = Math.min(start.rowIndex, end.rowIndex);
@@ -151,11 +165,10 @@ const CustomGrid: React.FC<CustomGridProps> = ({
           colIndex >= startCol &&
           colIndex <= endCol
         ) {
-          style.backgroundColor = "#d2e6fc"; // Light blue for selection
+          style.backgroundColor = "#d2e6fc";
         }
       }
 
-      // Darkening effect when copied
       if (isCopied && selectedRange.start && selectedRange.end) {
         const { start, end } = selectedRange;
         const startRow = Math.min(start.rowIndex, end.rowIndex);
@@ -169,7 +182,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
           colIndex >= startCol &&
           colIndex <= endCol
         ) {
-          style.backgroundColor = "#a8d4ff"; // Darker blue for copied cells
+          style.backgroundColor = "#a8d4ff";
         }
       }
 
@@ -199,9 +212,8 @@ const CustomGrid: React.FC<CustomGridProps> = ({
 
       navigator.clipboard.writeText(textToCopy.trim());
 
-      // Trigger darkening effect
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 1000); // Reset after 1 second
+      setTimeout(() => setIsCopied(false), 1000);
     }
   }, [selectedRange, columns, data]);
 
@@ -222,6 +234,58 @@ const CustomGrid: React.FC<CustomGridProps> = ({
     };
   }, [handleKeyDown]);
 
+  const handleResizeMouseDown = (event: React.MouseEvent, index: number) => {
+    event.preventDefault();
+    setIsResizing(true);
+    setResizeColumnIndex(index);
+    setResizeStartX(event.clientX);
+    setResizeStartWidth(columnWidths[columns[index].dataIndex] || columns[index].width || 100);
+  };
+
+  const handleResizeMouseMove = useCallback(
+    (event: MouseEvent) => {
+      if (isResizing && resizeColumnIndex !== null && resizeStartX !== null && resizeStartWidth !== null) {
+        const newWidth = resizeStartWidth + (event.clientX - resizeStartX);
+        setColumnWidths((prevWidths) => ({
+          ...prevWidths,
+          [columns[resizeColumnIndex].dataIndex]: newWidth,
+        }));
+      }
+    },
+    [isResizing, resizeColumnIndex, resizeStartX, resizeStartWidth, columns]
+  );
+
+  useEffect(() => {
+    document.addEventListener("mousemove", handleResizeMouseMove);
+    return () => {
+      document.removeEventListener("mousemove", handleResizeMouseMove);
+    };
+  }, [handleResizeMouseMove]);
+
+  // Drag-and-drop column reordering
+  const handleColumnDragStart = (event: React.DragEvent, index: number) => {
+    event.dataTransfer.setData("text/plain", index.toString());
+    setDraggedColumnIndex(index);
+  };
+
+  const handleColumnDragOver = (event: React.DragEvent, index: number) => {
+    event.preventDefault();
+    setDropColumnIndex(index);
+  };
+
+  const handleColumnDrop = (event: React.DragEvent, index: number) => {
+    event.preventDefault();
+    const draggedIndex = Number(event.dataTransfer.getData("text/plain"));
+    if (draggedIndex !== index) {
+      const newColumns = [...columns];
+      const [draggedColumn] = newColumns.splice(draggedIndex, 1);
+      newColumns.splice(index, 0, draggedColumn);
+      setColumns(newColumns);
+    }
+    setDraggedColumnIndex(null);
+    setDropColumnIndex(null);
+  };
+
   return (
     <div
       ref={tableContainerRef}
@@ -232,9 +296,36 @@ const CustomGrid: React.FC<CustomGridProps> = ({
           <thead style={{ position: "sticky", top: 0, background: "white", zIndex: 3 }}>
             <tr>
               {expandedRowRender && <th style={expandColumnStyle} />}
-              {columns.map((col) => (
-                <th key={col.key || col.dataIndex} style={columnStyle(col)}>
+              {columns.map((col, index) => (
+                <th
+                  key={col.key || col.dataIndex}
+                  style={
+                    {
+                      ...columnStyle(col, isDraggable), // Apply grab cursor only to header
+                      backgroundColor: draggedColumnIndex === index ? "#f0f0f0" : "white",
+                      borderRight: dropColumnIndex === index ? "2px solid blue" : "none",
+                    } as React.CSSProperties
+                  }
+                  draggable={isDraggable}
+                  onDragStart={isDraggable ? (event) => handleColumnDragStart(event, index) : undefined}
+                  onDragOver={isDraggable ? (event) => handleColumnDragOver(event, index) : undefined}
+                  onDrop={isDraggable ? (event) => handleColumnDrop(event, index) : undefined}
+                >
                   {col.title}
+                  {isResizable && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: "5px",
+                        cursor: "col-resize",
+                        backgroundColor: isResizing && resizeColumnIndex === index ? "#000" : "transparent",
+                      }}
+                      onMouseDown={(event) => handleResizeMouseDown(event, index)}
+                    />
+                  )}
                 </th>
               ))}
             </tr>
@@ -251,7 +342,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                   {columns.map((col, colIndex) => (
                     <td
                       key={col.key || col.dataIndex}
-                      style={{ ...columnStyle(col), ...getCellStyle(rowIndex, colIndex) }}
+                      style={{ ...columnStyle(col), ...getCellStyle(rowIndex, colIndex) } as React.CSSProperties}
                       onMouseDown={(event) => handleCellMouseDown(event, rowIndex, colIndex)}
                       onMouseEnter={() => handleCellMouseEnter(rowIndex, colIndex)}
                     >
@@ -270,7 +361,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
             ))}
           </tbody>
           {summary && (
-            <tfoot style={{ position: "sticky", bottom: 0, background: "white", zIndex: 3 }}>
+            <tfoot style={{ position: "sticky", bottom: 0, background: "white", zIndex: 3 } as React.CSSProperties}>
               <tr>
                 {expandedRowRender && <td style={expandColumnStyle} />}
                 {summary()}

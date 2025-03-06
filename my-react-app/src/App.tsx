@@ -80,6 +80,8 @@ function App() {
         rowKey="id"
         expandedRowKeys={expandedKeys}
         onExpand={handleExpand}
+        isDraggable
+        isResizable
         summary={() => {
           const summaryIndex: Record<number, string | number> = {
             1: "labData.length",
