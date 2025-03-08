@@ -6,6 +6,7 @@ interface ColumnType {
   key?: string;
   width?: number;
   render?: (text: any, record: any, index: number) => React.ReactNode;
+  fixed?: "left" | "right"; // New property for fixed columns
 }
 
 interface CustomGridProps {
@@ -53,7 +54,35 @@ const CustomGrid: React.FC<CustomGridProps> = ({
     onExpand?.(!isExpanded, record);
   };
 
-  const columnStyle = (col: ColumnType, isHeader: boolean = false) => ({
+
+  const getFixedPosition = (col: ColumnType, index: number) => {
+    if (!col.fixed) return {};
+
+    let left = 0;
+    let right = 0;
+
+    if (col.fixed === "left") {
+      for (let i = 0; i < index; i++) {
+        if (columns[i].fixed === "left") {
+          left += columnWidths[columns[i].dataIndex] || columns[i].width || 100;
+        }
+      }
+      return { left };
+    }
+
+    if (col.fixed === "right") {
+      for (let i = columns.length - 1; i > index; i--) {
+        if (columns[i].fixed === "right") {
+          right += columnWidths[columns[i].dataIndex] || columns[i].width || 100;
+        }
+      }
+      return { right };
+    }
+
+    return {};
+  };
+
+  const columnStyle = (col: ColumnType, index: number, isHeader: boolean = false) => ({
     boxShadow: "inset 0 0 0 0.5px #ddd",
     width: columnWidths[col.dataIndex] ? `${columnWidths[col.dataIndex]}px` : col.width ? `${col.width}px` : "100px",
     minWidth: columnWidths[col.dataIndex] ? `${columnWidths[col.dataIndex]}px` : col.width ? `${col.width}px` : "100px",
@@ -63,7 +92,9 @@ const CustomGrid: React.FC<CustomGridProps> = ({
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
     padding: "5px",
-    position: "relative",
+    position: col.fixed ? "sticky" : "relative", // Apply sticky position for fixed columns
+    ...getFixedPosition(col, index),
+    zIndex: col.fixed ? 2 : undefined,
     cursor: isHeader ? "grab" : "default", // Apply grab cursor only to header
   });
 
@@ -301,7 +332,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                   key={col.key || col.dataIndex}
                   style={
                     {
-                      ...columnStyle(col, isDraggable), // Apply grab cursor only to header
+                      ...columnStyle(col, index, isDraggable), // Apply grab cursor only to header
                       backgroundColor: draggedColumnIndex === index ? "#f0f0f0" : "white",
                       borderRight: dropColumnIndex === index ? "2px solid blue" : "none",
                     } as React.CSSProperties
@@ -342,7 +373,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                   {columns.map((col, colIndex) => (
                     <td
                       key={col.key || col.dataIndex}
-                      style={{ ...columnStyle(col), ...getCellStyle(rowIndex, colIndex) } as React.CSSProperties}
+                      style={{ ...columnStyle(col, colIndex), ...getCellStyle(rowIndex, colIndex) } as React.CSSProperties}
                       onMouseDown={(event) => handleCellMouseDown(event, rowIndex, colIndex)}
                       onMouseEnter={() => handleCellMouseEnter(rowIndex, colIndex)}
                     >
