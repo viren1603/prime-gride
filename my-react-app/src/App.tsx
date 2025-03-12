@@ -6,7 +6,6 @@ import { dataSource } from "./components/data/ExportDatas";
 function App() {
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
 
-
   const columns = [
     {
       title: "Name",
@@ -18,6 +17,7 @@ function App() {
     { title: "ID", dataIndex: "id", key: "id", width: 80, fixed: "left" },
     { title: "Email", dataIndex: "email", key: "email", width: 200 },
     { title: "Password", dataIndex: "passWord", key: "passWord", width: 400 },
+
     { title: "Time", dataIndex: "time", key: "time", width: 120 },
     { title: "Country", dataIndex: "country", key: "country", width: 150 },
     { title: "City", dataIndex: "city", key: "city", width: 150 },
@@ -116,6 +116,7 @@ function App() {
             </>
           );
         }}
+        expandedRow={true}
         expandedRowRender={(record) => (
           <CustomGrid
             data={record?.diamondList}
