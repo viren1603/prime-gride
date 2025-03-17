@@ -5,5 +5,5 @@
 - Summary Table Footer ✅
 - Column Resize ✅
 - Column Drag & Drop ✅
+- Column Obj ( position : "left" | "right") ✅
 - dynamic Height ( also you can manage by props)
-- Column Obj ( position : "left" | "right")
