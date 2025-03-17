@@ -170,9 +170,14 @@ const CustomGrid: React.FC<CustomGridProps> = ({
         const startCol = Math.min(start.colIndex, end.colIndex);
         const endCol = Math.max(start.colIndex, end.colIndex);
 
+        // Selected Range Bg Color
         if (rowIndex >= startRow && rowIndex <= endRow && colIndex >= startCol && colIndex <= endCol) {
           style.backgroundColor = '#d2e6fc';
+        } else {
+          style.backgroundColor = 'white'; // Reset background color for cells outside the selected range
         }
+      } else {
+        style.backgroundColor = 'white'; // Reset background color when no range is selected
       }
 
       if (isCopied && selectedRange.start && selectedRange.end) {
@@ -182,6 +187,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
         const startCol = Math.min(start.colIndex, end.colIndex);
         const endCol = Math.max(start.colIndex, end.colIndex);
 
+        // when we click C + C  // - Bg Color
         if (rowIndex >= startRow && rowIndex <= endRow && colIndex >= startCol && colIndex <= endCol) {
           style.backgroundColor = '#a8d4ff';
         }

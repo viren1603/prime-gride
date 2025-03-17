@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import CustomGrid from './components/PrimeGrid/CustomGrid';
+import CustomGrid, { ColumnType } from './components/PrimeGrid/CustomGrid';
 // import ExtraSummaryBox from "./components/common/ExtraSummaryBox";
 import { dataSource } from './components/data/ExportDatas';
-import PrimeTd from './components/common/PrimeTd';
 
 function App() {
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
 
-  const columns = [
+  const columns: ColumnType[] = [
     {
       title: 'Name',
       dataIndex: 'name',
@@ -77,16 +76,18 @@ function App() {
         data={dataSource}
         columns={columns}
         rowKey="id"
+        // Expanded Start
         expandedRowKeys={expandedKeys}
         onExpand={handleExpand}
+        expandedRow={true}
+        expandedRowRender={(record) => <CustomGrid data={record?.diamondList} columns={columns} rowKey="id" />}
+        // Expanded End
         isDraggable
         isResizable
         summary={{
           Name: { value: 'My Calculation' },
           ID: { value: 'viren' },
         }}
-        expandedRow={true}
-        expandedRowRender={(record) => <CustomGrid data={record?.diamondList} columns={columns} rowKey="id" />}
       />
     </div>
   );
