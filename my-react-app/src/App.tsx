@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import CustomGrid, { ColumnType } from './components/PrimeGrid/CustomGrid';
+import PrimGrid, { ColumnType } from './components/PrimeGrid/PrimGrid';
 // import ExtraSummaryBox from "./components/common/ExtraSummaryBox";
 import { dataSource } from './components/data/ExportDatas';
 
 function App() {
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
-
+  const [gridData, setGridData] = useState(dataSource);
   const columns: ColumnType[] = [
     {
       title: 'Name',
@@ -14,12 +14,10 @@ function App() {
       width: 150,
       fixed: 'left',
     },
-    { title: 'ID', dataIndex: 'id', key: 'id', width: 80, fixed: 'left' },
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 80, fixed: 'left', sorter: 'default' },
     { title: 'Email', dataIndex: 'email', key: 'email', width: 200 },
-    { title: 'Password', dataIndex: 'passWord', key: 'passWord', width: 400 },
-
     { title: 'Time', dataIndex: 'time', key: 'time', width: 120 },
-    { title: 'Country', dataIndex: 'country', key: 'country', width: 150 },
+    { title: 'Country', dataIndex: 'country', key: 'country', width: 150, sorter: 'default' },
     { title: 'City', dataIndex: 'city', key: 'city', width: 150 },
     { title: 'Phone', dataIndex: 'phone', key: 'phone', width: 150 },
     { title: 'Status', dataIndex: 'status', key: 'status', width: 120 },
@@ -50,6 +48,8 @@ function App() {
       key: 'education',
       width: 200,
     },
+    { title: 'Password', dataIndex: 'passWord', key: 'passWord', width: 400 },
+
     { title: 'Hobby', dataIndex: 'hobby', key: 'hobby', width: 150 },
     {
       title: 'Favorite Color',
@@ -70,24 +70,36 @@ function App() {
     setExpandedKeys((prev) => (expanded ? [...prev, record.id] : prev.filter((key) => key !== record.id)));
   };
 
+  const handleGridSort = (sortedData: any[], sortColumn: string, sortDirection: 'asc' | 'desc' | 'asItIs') => {
+    // if (sortDirection == 'asItIs') {
+    //   setGridData(dataSource);
+    // } else {
+    //   setGridData(sortedData);
+    // }
+    console.log(`Sorted by ${sortColumn} in ${sortDirection} direction`);
+  };
+
   return (
     <div>
-      <CustomGrid
-        data={dataSource}
+      <PrimGrid
+        data={gridData}
         columns={columns}
         rowKey="id"
         // Expanded Start
         expandedRowKeys={expandedKeys}
         onExpand={handleExpand}
         expandedRow={true}
-        expandedRowRender={(record) => <CustomGrid data={record?.diamondList} columns={columns} rowKey="id" />}
+        expandedRowRender={(record) => (
+          <PrimGrid data={record?.diamondList} columns={columns} rowKey="id" tableZIndex={1} />
+        )}
         // Expanded End
         isDraggable
         isResizable
         summary={{
           Name: { value: 'My Calculation' },
-          ID: { value: 'viren' },
+          ID: { value: 222 },
         }}
+        onSort={handleGridSort}
       />
     </div>
   );

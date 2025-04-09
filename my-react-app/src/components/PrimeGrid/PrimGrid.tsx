@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { PRIM_GRID_CSS } from '../cssExport/CssExport';
 
 export interface ColumnType {
   title: string;
@@ -7,23 +8,34 @@ export interface ColumnType {
   width?: number;
   render?: (text: any, record: any, index: number) => React.ReactNode;
   fixed?: 'left' | 'right'; // New property for fixed columns
+  sorter?: 'default' | ((a: any, b: any) => number);
+}
+export interface SummaryType {
+  [key: string]: {
+    value: string | number;
+    style?: React.CSSProperties;
+    className?: string;
+  };
 }
 
 interface CustomGridProps {
   data?: any[];
   columns?: ColumnType[];
   rowKey: string;
+  // Expanded Start
   expandedRowKeys?: React.Key[];
   onExpand?: (expanded: boolean, record: any) => void;
+  expandedRow?: boolean;
   expandedRowRender?: (record: any) => React.ReactNode;
-  summary?: any;
-  // summary?: () => React.ReactNode;
+  tableZIndex?: number;
+  // Expanded End
+  summary?: SummaryType;
   isResizable?: boolean;
   isDraggable?: boolean;
-  expandedRow?: boolean;
+  onSort?: (sortedData: any[], sortColumn: string, sortDirection: 'asc' | 'desc' | 'asItIs') => void;
 }
 
-const CustomGrid: React.FC<CustomGridProps> = ({
+const PrimGrid: React.FC<CustomGridProps> = ({
   data = [],
   columns: initialColumns = [],
   rowKey,
@@ -34,12 +46,15 @@ const CustomGrid: React.FC<CustomGridProps> = ({
   isResizable = false,
   isDraggable = false,
   expandedRow = false,
+  tableZIndex = 0,
+  onSort,
 }) => {
   const [selectedRange, setSelectedRange] = useState<{ start: any; end: any }>({
     start: null,
     end: null,
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [gridData, setGridData] = useState(data);
   const [isCopied, setIsCopied] = useState(false);
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
   const [isResizing, setIsResizing] = useState(false);
@@ -49,8 +64,9 @@ const CustomGrid: React.FC<CustomGridProps> = ({
   const [columns, setColumns] = useState<ColumnType[]>(initialColumns); // State for column order
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null); // Track dragged column
   const [dropColumnIndex, setDropColumnIndex] = useState<number | null>(null); // Track drop target
-
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | 'asItIs'>('asItIs');
 
   const handleExpandClick = (record: any) => {
     const isExpanded = expandedRowKeys.includes(record[rowKey]);
@@ -86,7 +102,9 @@ const CustomGrid: React.FC<CustomGridProps> = ({
   };
 
   const columnStyle = (col: ColumnType, index: number, isHeader: boolean = false) => ({
-    boxShadow: 'inset 0 0 0 0.5px black',
+    // boxShadow: 'inset 0 0 0 0.5px black',
+    boxShadow: `inset 0 0 0 0.2px #ddd, inset ${index !== 0 ? '0.2px' : '0px'} -0.5px 0 0 #ddd`,
+    // border: '1px solid #ddd',
     width: columnWidths[col.dataIndex] ? `${columnWidths[col.dataIndex]}px` : col.width ? `${col.width}px` : '100px',
     minWidth: columnWidths[col.dataIndex] ? `${columnWidths[col.dataIndex]}px` : col.width ? `${col.width}px` : '100px',
     maxWidth: columnWidths[col.dataIndex] ? `${columnWidths[col.dataIndex]}px` : col.width ? `${col.width}px` : '100px',
@@ -211,7 +229,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
         let rowText = '';
         for (let col = startCol; col <= endCol; col++) {
           const column = columns[col];
-          const cellValue = data[row][column.dataIndex];
+          const cellValue = gridData[row][column.dataIndex];
           rowText += (cellValue || '') + '\t';
         }
         textToCopy += rowText.trim() + '\n';
@@ -222,7 +240,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 1000);
     }
-  }, [selectedRange, columns, data]);
+  }, [selectedRange, columns, gridData]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -316,6 +334,52 @@ const CustomGrid: React.FC<CustomGridProps> = ({
       setColumns([defaultExpandedRow, ...initialColumns]);
     }
   }, [expandedRow, initialColumns]);
+  const defaultSorter = (a: any, b: any, direction: 'asc' | 'desc' | 'asItIs' | null) => {
+    if (direction === null || direction === 'asItIs') return 0;
+    const modifier = direction === 'asc' ? 1 : -1;
+
+    // Numeric comparison
+    if (typeof a === 'number' && typeof b === 'number') {
+      return (a - b) * modifier;
+    }
+
+    // String comparison
+    const aStr = String(a || '').toLowerCase();
+    const bStr = String(b || '').toLowerCase();
+    return aStr.localeCompare(bStr) * modifier;
+  };
+  const handleSort = (column: ColumnType) => {
+    if (!column.sorter) return;
+
+    let newDirection: 'asc' | 'desc' | 'asItIs' = 'asc';
+    if (sortColumn === column.dataIndex) {
+      if (sortDirection === 'asc') {
+        newDirection = 'desc';
+      } else if (sortDirection === 'desc') {
+        newDirection = 'asItIs';
+      } else {
+        newDirection = 'asc';
+      }
+    }
+
+    setSortColumn(newDirection ? column.dataIndex : null);
+    setSortDirection(newDirection);
+
+    if (typeof onSort === 'function') {
+      if (newDirection === 'asItIs' || newDirection === null) {
+        setGridData([...data]);
+      } else {
+        const sorted = [...gridData].sort((a, b) => {
+          if (column.sorter === 'default') {
+            return defaultSorter(a[column.dataIndex], b[column.dataIndex], newDirection);
+          }
+          return (column.sorter as (a: any, b: any) => number)(a, b);
+        });
+        // onSort(sorted, column.dataIndex, newDirection);
+        setGridData(sorted);
+      }
+    }
+  };
 
   return (
     <div
@@ -324,6 +388,8 @@ const CustomGrid: React.FC<CustomGridProps> = ({
         display: 'flex',
         flexDirection: 'column',
         height: '500px',
+        borderRadius: '20px',
+        overflow: 'hidden',
         border: '1px solid #ddd',
         userSelect: 'none',
       }}
@@ -341,7 +407,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
               position: 'sticky',
               top: 0,
               background: 'white',
-              zIndex: 3,
+              zIndex: 3 - tableZIndex,
             }}
           >
             <tr>
@@ -352,16 +418,44 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                   style={
                     {
                       ...columnStyle(col, index, isDraggable), // Apply grab cursor only to header
-                      backgroundColor: draggedColumnIndex === index ? '#f0f0f0' : 'white',
+                      backgroundColor:
+                        draggedColumnIndex === index ? '#f0f0f0' : PRIM_GRID_CSS?.header?.backgroundColor || 'white',
                       borderRight: dropColumnIndex === index ? '2px solid blue' : 'none',
+                      cursor: col.sorter ? 'pointer' : 'grab', // Change cursor for sortable columns
                     } as React.CSSProperties
                   }
                   draggable={isDraggable}
                   onDragStart={isDraggable ? (event) => handleColumnDragStart(event, index) : undefined}
                   onDragOver={isDraggable ? (event) => handleColumnDragOver(event, index) : undefined}
                   onDrop={isDraggable ? (event) => handleColumnDrop(event, index) : undefined}
+                  onClick={() => col.sorter && handleSort(col)}
                 >
-                  {col.title}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {col.title}
+                    {/* {console.log(col == sorter, 'columns')} */}
+                    {col?.sorter == 'default' && (
+                      <span style={{ marginLeft: 8, fontSize: 12, display: 'flex', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', flexDirection: 'row' }}>
+                          <div
+                            style={{
+                              fontSize: '8.5px',
+                              color: sortDirection === 'asc' && sortColumn === col.dataIndex ? 'blue' : 'black',
+                            }}
+                          >
+                            ▲
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '8.5px',
+                              color: sortDirection === 'desc' && sortColumn === col.dataIndex ? 'blue' : 'black',
+                            }}
+                          >
+                            ▼
+                          </div>
+                        </div>
+                      </span>
+                    )}
+                  </div>
                   {isResizable && (
                     <div
                       style={{
@@ -381,8 +475,8 @@ const CustomGrid: React.FC<CustomGridProps> = ({
             </tr>
           </thead>
           <tbody>
-            {data.map((row, rowIndex) => (
-              <React.Fragment key={row[rowKey]}>
+            {gridData.map((row, rowIndex) => (
+              <React.Fragment key={`${row[rowKey]}-${rowIndex}`}>
                 <tr>
                   {columns.map((col, colIndex) => (
                     <td
@@ -391,10 +485,15 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                         {
                           ...columnStyle(col, colIndex),
                           ...getCellStyle(rowIndex, colIndex),
+                          // ...PRIM_GRID_CSS?.tableBody,
                         } as React.CSSProperties
                       }
-                      onMouseDown={(event) => handleCellMouseDown(event, rowIndex, colIndex)}
-                      onMouseEnter={() => handleCellMouseEnter(rowIndex, colIndex)}
+                      onMouseDown={(event) => {
+                        col?.key != 'expanded' && handleCellMouseDown(event, rowIndex, colIndex);
+                      }}
+                      onMouseEnter={() => {
+                        col?.key != 'expanded' && handleCellMouseEnter(rowIndex, colIndex);
+                      }}
                     >
                       {col.render ? col.render(row[col.dataIndex], row, rowIndex) : row[col.dataIndex]}
                     </td>
@@ -417,7 +516,7 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                   position: 'sticky',
                   bottom: 0,
                   background: 'white',
-                  zIndex: 3,
+                  zIndex: 3 - tableZIndex, // Adjust z-index for summary
                 } as React.CSSProperties
               }
             >
@@ -430,7 +529,6 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                       key={col.key || col.dataIndex}
                       style={{
                         fontWeight: 'bold',
-                        background: '#f5f5f5',
                         boxShadow: 'inset 0 0 0 0.5px black',
                         textAlign: 'left',
                         padding: '8px',
@@ -441,9 +539,11 @@ const CustomGrid: React.FC<CustomGridProps> = ({
                         ...({
                           ...columnStyle(col, index),
                         } as React.CSSProperties),
+                        // ...PRIM_GRID_CSS?.tableFooter,
+                        backgroundColor: PRIM_GRID_CSS?.tableFooter?.backgroundColor || '#f5f5f5',
                       }}
                       className={className || ''}
-                      title={summary[col.title]?.value || ''} // Show full text on hover
+                      title={String(summary[col.title]?.value) || ''} // Show full text on hover
                     >
                       {value}
                     </td>
@@ -458,4 +558,4 @@ const CustomGrid: React.FC<CustomGridProps> = ({
   );
 };
 
-export default CustomGrid;
+export default PrimGrid;
