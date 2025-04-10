@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { PRIM_GRID_CSS } from '../cssExport/CssExport';
+import { FaCircleChevronRight } from 'react-icons/fa6';
+import { FaCircleChevronDown } from 'react-icons/fa6';
 
 export interface ColumnType {
   title: string;
@@ -9,6 +11,7 @@ export interface ColumnType {
   render?: (text: any, record: any, index: number) => React.ReactNode;
   fixed?: 'left' | 'right'; // New property for fixed columns
   sorter?: 'default' | ((a: any, b: any) => number);
+  textAlign?: 'left' | 'center' | 'right';
 }
 export interface SummaryType {
   [key: string]: {
@@ -23,6 +26,7 @@ interface CustomGridProps {
   columns?: ColumnType[];
   rowKey: string;
   // Expanded Start
+  customExpandedIcon?: (expanded: boolean, record: any) => React.ReactNode;
   expandedRowKeys?: React.Key[];
   onExpand?: (expanded: boolean, record: any) => void;
   expandedRow?: boolean;
@@ -33,12 +37,15 @@ interface CustomGridProps {
   isResizable?: boolean;
   isDraggable?: boolean;
   onSort?: (sortedData: any[], sortColumn: string, sortDirection: 'asc' | 'desc' | 'asItIs') => void;
+  tableBorderRadius?: string;
+  defaultTextAliment?: 'left' | 'center' | 'right';
 }
 
 const PrimGrid: React.FC<CustomGridProps> = ({
   data = [],
   columns: initialColumns = [],
   rowKey,
+  customExpandedIcon,
   expandedRowKeys = [],
   onExpand,
   expandedRowRender,
@@ -48,6 +55,8 @@ const PrimGrid: React.FC<CustomGridProps> = ({
   expandedRow = false,
   tableZIndex = 0,
   onSort,
+  tableBorderRadius,
+  defaultTextAliment = 'left',
 }) => {
   const [selectedRange, setSelectedRange] = useState<{ start: any; end: any }>({
     start: null,
@@ -67,6 +76,10 @@ const PrimGrid: React.FC<CustomGridProps> = ({
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | 'asItIs'>('asItIs');
+
+  useEffect(() => {
+    setGridData(data);
+  }, [data]);
 
   const handleExpandClick = (record: any) => {
     const isExpanded = expandedRowKeys.includes(record[rowKey]);
@@ -117,6 +130,7 @@ const PrimGrid: React.FC<CustomGridProps> = ({
     ...getFixedPosition(col, index),
     zIndex: col.fixed ? 2 : undefined,
     cursor: isHeader ? 'grab' : 'default', // Apply grab cursor only to header
+    textAlign: col.textAlign || defaultTextAliment,
   });
 
   const handleCellMouseDown = useCallback(
@@ -322,7 +336,13 @@ const PrimGrid: React.FC<CustomGridProps> = ({
           onClick={() => handleExpandClick(record)}
           style={{ cursor: 'pointer', width: '100%', display: 'flex', justifyContent: 'center' }}
         >
-          {expandedRowKeys.includes(record[rowKey]) ? '▼' : '▶'}
+          {customExpandedIcon ? (
+            customExpandedIcon(expandedRowKeys.includes(record[rowKey]), record)
+          ) : expandedRowKeys.includes(record[rowKey]) ? (
+            <FaCircleChevronDown color={PRIM_GRID_CSS?.tableBody?.expandedIconColor || 'black'} />
+          ) : (
+            <FaCircleChevronRight color={PRIM_GRID_CSS?.tableBody?.expandedIconColor || 'black'} />
+          )}
         </div>
       );
     },
@@ -388,7 +408,7 @@ const PrimGrid: React.FC<CustomGridProps> = ({
         display: 'flex',
         flexDirection: 'column',
         height: '500px',
-        borderRadius: '20px',
+        borderRadius: tableBorderRadius || PRIM_GRID_CSS?.tableBorder?.borderRadius || '20px',
         overflow: 'hidden',
         border: '1px solid #ddd',
         userSelect: 'none',
@@ -402,6 +422,7 @@ const PrimGrid: React.FC<CustomGridProps> = ({
             tableLayout: 'fixed',
           }}
         >
+          {/* ------------------------------------- HEADER START------------------------------------- */}
           <thead
             style={{
               position: 'sticky',
@@ -411,7 +432,6 @@ const PrimGrid: React.FC<CustomGridProps> = ({
             }}
           >
             <tr>
-              {/* {expandedRowRender && <th style={expandColumnStyle} />} */}
               {columns.map((col, index) => (
                 <th
                   key={col.key || col.dataIndex}
@@ -419,7 +439,8 @@ const PrimGrid: React.FC<CustomGridProps> = ({
                     {
                       ...columnStyle(col, index, isDraggable), // Apply grab cursor only to header
                       backgroundColor:
-                        draggedColumnIndex === index ? '#f0f0f0' : PRIM_GRID_CSS?.header?.backgroundColor || 'white',
+                        draggedColumnIndex === index ? '#f0f0f0' : PRIM_GRID_CSS?.header?.backgroundColor || '#f5f5f5',
+                      color: PRIM_GRID_CSS?.header?.color || 'black',
                       borderRight: dropColumnIndex === index ? '2px solid blue' : 'none',
                       cursor: col.sorter ? 'pointer' : 'grab', // Change cursor for sortable columns
                     } as React.CSSProperties
@@ -430,7 +451,13 @@ const PrimGrid: React.FC<CustomGridProps> = ({
                   onDrop={isDraggable ? (event) => handleColumnDrop(event, index) : undefined}
                   onClick={() => col.sorter && handleSort(col)}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: col.textAlign || defaultTextAliment,
+                    }}
+                  >
                     {col.title}
                     {/* {console.log(col == sorter, 'columns')} */}
                     {col?.sorter == 'default' && (
@@ -474,6 +501,8 @@ const PrimGrid: React.FC<CustomGridProps> = ({
               ))}
             </tr>
           </thead>
+          {/* ------------------------------------- HEADER END------------------------------------- */}
+          {/* ------------------------------------- BODY START------------------------------------- */}
           <tbody>
             {gridData.map((row, rowIndex) => (
               <React.Fragment key={`${row[rowKey]}-${rowIndex}`}>
@@ -509,6 +538,8 @@ const PrimGrid: React.FC<CustomGridProps> = ({
               </React.Fragment>
             ))}
           </tbody>
+          {/* ------------------------------------- BODY END------------------------------------- */}
+          {/* ------------------------------------- FOOTER START------------------------------------- */}
           {summary && (
             <tfoot
               style={
@@ -530,17 +561,17 @@ const PrimGrid: React.FC<CustomGridProps> = ({
                       style={{
                         fontWeight: 'bold',
                         boxShadow: 'inset 0 0 0 0.5px black',
-                        textAlign: 'left',
                         padding: '8px',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        ...style,
                         ...({
                           ...columnStyle(col, index),
                         } as React.CSSProperties),
-                        // ...PRIM_GRID_CSS?.tableFooter,
                         backgroundColor: PRIM_GRID_CSS?.tableFooter?.backgroundColor || '#f5f5f5',
+                        color: PRIM_GRID_CSS?.tableFooter?.color || 'black',
+                        ...style,
+                        // ...PRIM_GRID_CSS?.tableFooter,
                       }}
                       className={className || ''}
                       title={String(summary[col.title]?.value) || ''} // Show full text on hover
@@ -552,6 +583,7 @@ const PrimGrid: React.FC<CustomGridProps> = ({
               </tr>
             </tfoot>
           )}
+          {/* ------------------------------------- FOOTER END------------------------------------- */}
         </table>
       </div>
     </div>

@@ -1,25 +1,38 @@
 export interface PrimGridCssType {
   header?: {
-    backgroundColor: any;
+    backgroundColor?: any;
+    color?: any;
   };
-  tableBody?: any;
+  tableBody?: {
+    expandedIconColor?: any;
+  };
   tableFooter?: {
-    backgroundColor: any;
+    backgroundColor?: any;
+    color?: any;
+  };
+  tableBorder?: {
+    borderRadius?: any;
   };
 }
 
 export const PRIM_GRID_CSS: PrimGridCssType = {
   header: {
     backgroundColor: '#D9EEFE',
+    // color: '#2169B2',
   },
   tableBody: {
-    // boxShadow: 'inset 0 0 0 0.5px #A9A9A9',
+    expandedIconColor: '#3B7FC0',
+    // boxShadow: 'inset 0 0 0 0.5pxrgb(102, 102, 102)',
     // fontFamily: 'fantasy',
     // background: 'black',
-    // color: 'white',
+    // color: '#2169B2',
   },
   tableFooter: {
     backgroundColor: '#D9EEFE',
+    // color: '#2169B2',
     // fontFamily: 'fantasy',
+  },
+  tableBorder: {
+    // borderRadius: '10px',
   },
 };
