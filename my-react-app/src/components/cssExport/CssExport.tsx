@@ -5,6 +5,8 @@ export interface PrimGridCssType {
   };
   tableBody?: {
     expandedIconColor?: any;
+    rowHeight?: any;
+    cellPadding?: any;
   };
   tableFooter?: {
     backgroundColor?: any;
@@ -22,15 +24,12 @@ export const PRIM_GRID_CSS: PrimGridCssType = {
   },
   tableBody: {
     expandedIconColor: '#3B7FC0',
-    // boxShadow: 'inset 0 0 0 0.5pxrgb(102, 102, 102)',
-    // fontFamily: 'fantasy',
-    // background: 'black',
-    // color: '#2169B2',
+    rowHeight: '10px',
+    cellPadding: '5px 5px',
   },
   tableFooter: {
     backgroundColor: '#D9EEFE',
     // color: '#2169B2',
-    // fontFamily: 'fantasy',
   },
   tableBorder: {
     // borderRadius: '10px',

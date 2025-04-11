@@ -407,7 +407,7 @@ const PrimGrid: React.FC<CustomGridProps> = ({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '500px',
+        height: '100%',
         borderRadius: tableBorderRadius || PRIM_GRID_CSS?.tableBorder?.borderRadius || '20px',
         overflow: 'hidden',
         border: '1px solid #ddd',
@@ -417,6 +417,7 @@ const PrimGrid: React.FC<CustomGridProps> = ({
       <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
         <table
           style={{
+            // height: '100%',
             width: 'max-content',
             borderCollapse: 'collapse',
             tableLayout: 'fixed',
@@ -514,7 +515,8 @@ const PrimGrid: React.FC<CustomGridProps> = ({
                         {
                           ...columnStyle(col, colIndex),
                           ...getCellStyle(rowIndex, colIndex),
-                          // ...PRIM_GRID_CSS?.tableBody,
+                          padding: PRIM_GRID_CSS?.tableBody?.cellPadding || '0 5px',
+                          height: PRIM_GRID_CSS?.tableBody?.rowHeight || '31px',
                         } as React.CSSProperties
                       }
                       onMouseDown={(event) => {

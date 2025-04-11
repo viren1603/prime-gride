@@ -1,8 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import PrimGrid, { ColumnType } from './components/PrimeGrid/PrimGrid';
-import { cloneDeep } from 'lodash';
-
-// import ExtraSummaryBox from "./components/common/ExtraSummaryBox";
 import { dataSource } from './components/data/ExportDatas';
 
 let UPDATED_DATA: any[] = [];
@@ -10,34 +7,12 @@ let UPDATED_DATA: any[] = [];
 function App() {
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [gridData, setGridData] = useState<any[]>(dataSource);
-  console.log(expandedKeys, 'expandedKeys');
 
   useEffect(() => {
     setGridData(dataSource || []);
     UPDATED_DATA = [...dataSource];
   }, [dataSource]);
 
-  // const handleSelectChange = async ({
-  //   keyName,
-  //   value,
-  //   record,
-  //   uniqueId,
-  // }: {
-  //   keyName: any;
-  //   value: any;
-  //   record: any;
-  //   uniqueId: any;
-  // }) => {
-  //   const newData = [...UPDATED_DATA]; // Shallow copy of the array
-  //   let targetRow = record;
-
-  //   if (targetRow) {
-  //     targetRow[keyName] = value;
-  //     newData[uniqueId] = targetRow;
-  //   }
-  //   UPDATED_DATA = newData;
-  //   setGridData(UPDATED_DATA);
-  // };
   const handleSelectChange = async ({
     keyName,
     value,
@@ -155,9 +130,10 @@ function App() {
   };
 
   return (
-    <div>
+    <div style={{ height: '600px' }}>
       <PrimGrid
-        data={gridData}
+        // data={[gridData[0], gridData[1]]}
+        data={[gridData[0], gridData[1]]}
         columns={columns}
         rowKey="id"
         // Expanded Start
